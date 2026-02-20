@@ -173,7 +173,7 @@ descendant.Value = 0
 end
 for _, descendant in ipairs(MainFolder:GetDescendants()) do
     if descendant.Name == "Auto" then
-descendant.Value = True
+descendant.Value = true
     end
 end
 end)
