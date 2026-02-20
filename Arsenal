@@ -126,6 +126,7 @@ RunService.Heartbeat:Connect(function()
         nextClickTime = time() + CLICK_INTERVAL
     end
 end)
+local MainFolder = game:GetService("ReplicatedStorage").Weapons
 local Tab = Window:AddTab("Main", "bookmark")
 local LeftGroupBox = Tab:AddLeftGroupbox("Main", "bottle-wine")
 LeftGroupBox:AddButton("Hub with aim and etc", function()
@@ -153,7 +154,29 @@ else
    spamEnabled = true
 end
 end)
+LeftGroupBox:AddButton("No Spread, Recoil, auto", function()
 
+for _, descendant in ipairs(MainFolder:GetDescendants()) do
+    if descendant.Name == "Spread" then
+descendant.Value = 0
+    end
+end
+for _, descendant in ipairs(MainFolder:GetDescendants()) do
+    if descendant.Name == "SpreadRecovery" then
+descendant.Value = 0
+    end
+end
+for _, descendant in ipairs(MainFolder:GetDescendants()) do
+    if descendant.Name == "RecoilControl" then
+descendant.Value = 0
+    end
+end
+for _, descendant in ipairs(MainFolder:GetDescendants()) do
+    if descendant.Name == "Auto" then
+descendant.Value = True
+    end
+end
+end)
 LeftGroupBox:AddButton("Load Head Only triggerbot (X)", function()
 local enabled = true
 local toggle = Enum.KeyCode.X
