@@ -231,7 +231,6 @@ end)
 RightGroupBox:AddButton("Load juju v2", function()
 loadstring(game:HttpGet('https://raw.githubusercontent.com/pyBIrtat/z/refs/heads/main/jujuV2'))()
 end)
-
 RightGroupBox:AddDivider()
 local labba = RightGroupBox:AddLabel("Menu bind")
 labba:AddKeyPicker("MenuKeybind", {
@@ -251,6 +250,15 @@ LeftGroupBox:AddInput("inputted1", {
 game:GetService("Players").LocalPlayer.Data.Melee.Value = (value)
     end
 })
+local mainfolder1 = game:GetService("ReplicatedStorage").Melees
+local function findAllMelees()
+    for _, child in ipairs(mainfolder1:GetChildren()) do
+        print(child.Name)
+    end
+end
+LeftGroupBox:AddButton("Print melee names in console", function()
+findAllMelees()
+end)
 LeftGroupBox:AddInput("inputted2", {
     Text = "Hand Changer",
     Default = "",
@@ -605,4 +613,108 @@ on = false
 else
     on = true
 end
+end)
+local AntiAimTab = Window:AddTab("AntiAimTab", "bookmark")
+local AntiAimLeftGroup = AntiAimTab:AddLeftGroupbox("Anti-Aim")
+local AntiAimEnabled = false
+AntiAimLeftGroup:AddToggle('AntiAimEnabled', {
+    Text = 'Enable Anti-Aim',
+    Default = false,
+    Callback = function(value) AntiAimEnabled = value end
+})
+local AntiAimType = "Spin"
+AntiAimLeftGroup:AddDropdown('AntiAimType', {
+    Text = 'Type',
+    Values = {"Spin", "Jitter", "Fake Lag"},
+    Default = 1,
+    Callback = function(value) AntiAimType = value end
+})
+local YawBase = 180
+AntiAimLeftGroup:AddSlider('YawBase', {
+    Text = 'Yaw Base',
+    Min = -180,
+    Max = 180,
+    Default = 180,
+    Rounding = 0,
+    Callback = function(value) YawBase = value end
+})
+local YawOffset = 0
+AntiAimLeftGroup:AddSlider('YawOffset', {
+    Text = 'Yaw Offset',
+    Min = -180,
+    Max = 180,
+    Default = 0,
+    Rounding = 0,
+    Callback = function(value) YawOffset = value end
+})
+local Pitch = 0
+AntiAimLeftGroup:AddSlider('Pitch', {
+    Text = 'Pitch',
+    Min = -89,
+    Max = 89,
+    Default = 0,
+    Rounding = 0,
+    Callback = function(value) Pitch = value end
+})
+local SpinSpeed = 10
+AntiAimLeftGroup:AddSlider('SpinSpeed', {
+    Text = 'Spin Speed',
+    Min = 1,
+    Max = 50000,
+    Default = 10,
+    Rounding = 0,
+    Callback = function(value) SpinSpeed = value end
+})
+local JitterAngle = 45
+AntiAimLeftGroup:AddSlider('JitterAngle', {
+    Text = 'Jitter Angle',
+    Min = 0,
+    Max = 180,
+    Default = 45,
+    Rounding = 0,
+    Callback = function(value) JitterAngle = value end
+})
+local FakeLagTime = 0.5 -- Time in seconds
+AntiAimLeftGroup:AddSlider('FakeLagTime', {
+    Text = 'Fake Lag Time (s)',
+    Min = 0,
+    Max = 2,
+    Default = 0.5,
+    Rounding = 2,
+    Callback = function(value) FakeLagTime = value end
+})
+local angle = 0
+local jitterTick = 0
+local positionQueue = {}
+local lastTime = tick()
+local spinVariation = 0
+RunService.Heartbeat:Connect(function(delta)
+    if AntiAimEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local root = LocalPlayer.Character.HumanoidRootPart
+        local humanoid = LocalPlayer.Character.Humanoid
+        if AntiAimType == "Spin" then
+            spinVariation = math.random(-5, 5) -- Better with variation
+            angle = (angle + (SpinSpeed + spinVariation) * delta * (Invert and -1 or 1)) % 360
+            root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(angle + YawBase + YawOffset), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
+        elseif AntiAimType == "Jitter" then
+            jitterTick = jitterTick + 1
+            local offset = (jitterTick % 3 == 0) and JitterAngle or (jitterTick % 3 == 1 and -JitterAngle or 0) -- Better variation
+            root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(YawBase + YawOffset + offset), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
+        elseif AntiAimType == "Fake Lag" then
+            local currentTime = tick()
+            if currentTime - lastTime > FakeLagTime then
+                -- Apply delayed position with correction
+                if #positionQueue > 0 then
+                    local delayedCFrame = table.remove(positionQueue, 1)
+                    root.CFrame = delayedCFrame:Lerp(root.CFrame, 0.5) -- Smooth correction
+                end
+                lastTime = currentTime
+            else
+                -- Predict and store with improved prediction
+                local predictedVel = root.Velocity + humanoid.MoveDirection * humanoid.WalkSpeed
+                local predictedPos = root.Position + predictedVel * FakeLagTime
+                table.insert(positionQueue, CFrame.new(predictedPos, predictedPos + root.CFrame.LookVector))
+            end
+        end
+    end
 end)
